@@ -1,2 +1,5 @@
 .DS_Store
 input
+data
+__pycache__
+*.pth.rar
