@@ -1,8 +1,10 @@
+import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import pydicom
 import os
 import pylab
+import shutil
 from matplotlib.patches import Rectangle
 from scipy.ndimage.interpolation import map_coordinates
 from scipy.ndimage.filters import gaussian_filter
@@ -22,6 +24,21 @@ def get_patient_boxes(df, p_id):
                [x2, y2, width2, height2, class2, target2]])
     '''
     boxes = df.loc[df['patientId'] == p_id][['x', 'y', 'width', 'height', 'class', 'Target']].values
+    return boxes
+
+def get_patient_boxes_values(df, p_id):
+    '''
+    Input:
+        df: data frame
+        p_id: patient ID
+    
+    Output:
+        array of all bouding boxes and the target's labels
+        e.g:
+        array([[x1, y1, width1, height1],
+               [x2, y2, width2, height2]])
+    '''
+    boxes = df.loc[df['patientId'] == p_id][['x', 'y', 'width', 'height']].values
     return boxes
 
 def get_patient_dcm(p_id, sample='train'):
@@ -118,3 +135,30 @@ def elastic_transform_image(img, alpha, sigma, random_seed=None):
     warped_image = map_coordinates(img, indices, order=1).reshape(shape)
 
     return warped_image
+
+def rescale_box_coordinates(box, rescale_factor):
+    x, y, w, h = box
+    x = int(round(x/rescale_factor))
+    y = int(round(y/rescale_factor))
+    w = int(round(w/rescale_factor))
+    h = int(round(h/rescale_factor))
+    return [x, y, w, h]
+
+def draw_boxes(predicted_boxes, confidences, target_boxes, ax, angle=0):
+    if len(predicted_boxes)>0:
+        for box, c in zip(predicted_boxes, confidences):
+            x, y, w, h = box 
+
+            patch = Rectangle((x,y), w, h, color='red', ls='dashed',
+                              angle=angle, fill=False, lw=4, joinstyle='round', alpha=0.6)
+            ax.add_patch(patch)
+
+            ax.text(x+w/2., y-5, '{:.2}'.format(c), color='red', size=20, va='center', ha='center')
+    if len(target_boxes)>0:
+        for box in target_boxes:
+            x, y, w, h = box
+            patch = Rectangle((x,y), w, h, color='green',  
+                              angle=angle, fill=False, lw=4, joinstyle='round', alpha=0.6)
+            ax.add_patch(patch)
+    
+    return ax

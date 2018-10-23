@@ -3,3 +3,5 @@ input
 data
 __pycache__
 *.pth.rar
+.ipynb_checkpoints
+output
